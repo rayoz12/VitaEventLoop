@@ -10,15 +10,15 @@ namespace VitaEventLoop
 class TimeoutSource : public EventSource
 {
 public:
-	TimeoutSource(int timeout=-1);
-	bool prepare(int &max_timeout) override;
+	TimeoutSource(long timeout=-1);
+	bool prepare(long &max_timeout) override;
 	bool check() override;
 	bool dispatch(EventHandler &func) override { return func(*this); }
 
 private:
-	int m_timeout;
+	long m_timeout;
 	std::uint64_t m_next_expiry;
-	bool is_ready(int& max_timeout);
+	bool is_ready(long& max_timeout);
 };
 
 } // namespace VitaEventLoop

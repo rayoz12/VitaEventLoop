@@ -27,11 +27,11 @@ public:
 	 * Called before the event loop polls any file descriptors. If your event source knows
 	 * it's ready now, implementations can return true and skip polling. The max_timeout 
 	 * argument is an output parameter that can limit how long the poll() timeout is. 
-	 * The value is in milliseconds and may be lowered by other event sources.
+	 * The value is in microseconds and may be lowered by other event sources.
 	 * 
-	 * @param max_timeout an output parameter that can limit how long the poll() timeout is in milliseconds
+	 * @param max_timeout an output parameter that can limit how long the select() timeout is in microseconds
 	 */
-	virtual bool prepare(int& max_timeout) { max_timeout = -1; return false; }
+	virtual bool prepare(long& max_timeout) { max_timeout = -1; return false; }
 
 	/**
 	 * This function is called after the file descriptors have been polled. 

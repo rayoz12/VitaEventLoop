@@ -7,14 +7,14 @@ using namespace std;
 namespace VitaEventLoop
 {
 
-TimeoutSource::TimeoutSource(int timeout)
+TimeoutSource::TimeoutSource(long timeout)
 	: m_timeout(timeout),
 	  m_next_expiry(time_now() + timeout)
 {
     sourceType = EventSourceType::Timeout;
 }
 
-bool TimeoutSource::is_ready(int &max_timeout)
+bool TimeoutSource::is_ready(long &max_timeout)
 {
 	uint64_t now = time_now();
 	if (now >= m_next_expiry)
@@ -29,14 +29,14 @@ bool TimeoutSource::is_ready(int &max_timeout)
 	}
 }
 
-bool TimeoutSource::prepare(int &max_timeout)
+bool TimeoutSource::prepare(long &max_timeout)
 {
 	return is_ready(max_timeout);
 }
 
 bool TimeoutSource::check()
 {
-	int unused = 0;
+	long unused = 0;
 	return is_ready(unused);
 }
 

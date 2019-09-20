@@ -20,7 +20,7 @@ public:
         sourceType = EventSourceType::Network;
     }
 
-	bool prepare(int&) override { return false; }
+	bool prepare(long&) override { return false; }
 
     /**
      * Deleted function please use the <#check(fd_set)> method

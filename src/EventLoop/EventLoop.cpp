@@ -6,7 +6,8 @@
 //
 #include <algorithm>
 #include <unordered_set>
-#include <poll.h>
+#include <sys/types.h>
+#include <sys/select.h>
 #include <iostream>
 
 #include "./EventLoop.h"
@@ -27,7 +28,7 @@ struct EventLoop::Private
 	vector<EventSource*> sources;
 	vector<EventSource*> remove_sources;
 	vector<NetworkSource*> pollable_sources;
-	vector<struct pollfd> poll_fds;
+	fd_set read_fds;
 	unordered_set<EventSource*> source_set;
 	// vector<IdleSource*> idle_sources;
 	vector<TimeoutSource*> timeout_sources;
@@ -48,8 +49,9 @@ EventLoop::EventLoop()
 
 void EventLoop::iteration()
 {
-	int max_timeout = -1;
+	long max_timeout = -1;
 	int n_ready = 0;
+    FD_ZERO(&impl->read_fds);
 
 	// prepare and check for already ready event sources
 	for (auto source : impl->sources)
@@ -57,7 +59,7 @@ void EventLoop::iteration()
 		// if (source->is_idle_source())
 		// 	continue;
 
-		int source_timeout = -1;
+		long source_timeout = -1;
 
 		if (source->prepare(source_timeout))
 		{
@@ -72,15 +74,14 @@ void EventLoop::iteration()
 	}
 
 	// poll all of the pollable event sources
-	impl->poll_fds.resize(impl->pollable_sources.size());
+	//impl->read_fds.resize(impl->pollable_sources.size());
 	for (size_t i = 0; i < impl->pollable_sources.size(); i++)
 	{
-		if (! impl->pollable_sources[i]->loop_data.ready &&
+		if (! impl->pollable_sources[i]->loop_data.ready && //might need to remove this "ready" check
 				impl->pollable_sources[i]->fd >= 0)
 		{
-			impl->poll_fds[i].fd = impl->pollable_sources[i]->fd;
-			impl->poll_fds[i].events = static_cast<int>(impl->pollable_sources[i]->events);
-			impl->poll_fds[i].revents = impl->pollable_sources[i]->revents = 0;
+            
+            FD_SET(impl->pollable_sources[i]->fd, &impl->read_fds);
 		}
 	}
 
@@ -89,13 +90,27 @@ void EventLoop::iteration()
 	// if (n_ready < 1 && impl->idle_sources.size() > 0)
 	// 	max_timeout = 0;
     if (n_ready < 1)
-    max_timeout = 0;
+        max_timeout = 0;
 
 	// if (::poll(impl->poll_fds.data(), impl->poll_fds.size(), max_timeout) > 0)
 	// {
 	// 	for (size_t i = 0; i < impl->pollable_sources.size(); i++)
 	// 		impl->pollable_sources[i]->revents = impl->poll_fds[i].revents;
 	// }
+    
+    // Set select() timeout
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = max_timeout;
+
+    if (::select(impl->pollable_sources.size(), &impl->read_fds, NULL, NULL, &tv) > 0)
+	{
+		for (size_t i = 0; i < impl->pollable_sources.size(); i++)
+            if (FD_ISSET(impl->pollable_sources[i]->fd , &impl->read_fds)) {
+                // data recieved
+			    impl->pollable_sources[i]->eventOccured = true;
+            }
+	}
 
 	// now check if any more sources are ready after polling
 	for (auto source : impl->sources)
@@ -103,7 +118,7 @@ void EventLoop::iteration()
 		// if (source->is_idle_source())
 		// 	continue;
 
-		if (! source->loop_data.ready)
+		if (!source->loop_data.ready)
 		{
 			if (source->check())
 			{
