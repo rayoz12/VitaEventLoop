@@ -57,6 +57,7 @@ public:
 
 private:
 	friend class EventLoop;
+protected:
 	struct {
 		bool ready;
 		EventHandler handler;

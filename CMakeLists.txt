@@ -63,6 +63,7 @@ target_link_libraries(${PROJECT_NAME}
   SceIofilemgr_stub
   SceDisplay_stub
   SceNet_stub
+  SceNetCtl_stub
   SceSysmodule_stub
   m
 )

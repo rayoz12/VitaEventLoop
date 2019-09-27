@@ -5,13 +5,21 @@
 
 #include <cstdio>
 
-#include "debugScreen.h"
 
 #include "./EventLoop/EventLoop.h"
+#include "./EventSource/TimeoutSource.h"
+#include "./EventSource/NetworkSource.h"
+#include "./net.h"
 
+#include "debugScreen.h"
 #define printf psvDebugScreenPrintf
 
-
+void graceful_exit() {
+	printf("Exiting");
+	net_term();
+	sceKernelDelayThread(30*1000000); // Wait for 30 seconds
+	sceKernelExitProcess(0);
+}
 
 int main(int argc, char *argv[]) {
 	sceSysmoduleLoadModule(SCE_SYSMODULE_NET);
@@ -36,8 +44,36 @@ int main(int argc, char *argv[]) {
 	using namespace VitaEventLoop;
 	EventLoop loop;
 
+	auto timeoutSource = new TimeoutSource(2000);
+	loop.add_event_source(timeoutSource, [&](EventSource&) {
+		printf("Timeout Expired\n");
+		return false;
+	});
+
+	if (net_init() < 0) {
+		printf("Failed to init Net\n");
+		graceful_exit();
+	};
+
+	Socket* serverSocket;
+
+	if (net_CreateUDPServer(4200, &serverSocket) < 0) {
+		printf("Failed to create server\n");
+		graceful_exit();
+	}
+
+	auto networkSource = new NetworkSource(serverSocket->sock);
+	loop.add_event_source(networkSource, [&](EventSource&) {
+		printf("activity on network\n");
+		return false;
+	});
+	printf("Server Started\n");
+	loop.run();
+
+	printf("Event Loop Finished\n");
 
 	sceKernelDelayThread(30*1000000); // Wait for 30 seconds
 	sceKernelExitProcess(0);
+
     return 0;
 }

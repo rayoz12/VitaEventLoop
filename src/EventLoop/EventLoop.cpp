@@ -10,6 +10,9 @@
 #include <sys/select.h>
 #include <iostream>
 
+#include "debugScreen.h"
+#define printf psvDebugScreenPrintf
+
 #include "./EventLoop.h"
 #include "./../EventSource/EventSource.h"
 #include "./../EventSource/NetworkSource.h"
@@ -72,9 +75,9 @@ void EventLoop::iteration()
 			max_timeout = source_timeout;
 		}
 	}
-
+	
 	// poll all of the pollable event sources
-	//impl->read_fds.resize(impl->pollable_sources.size());
+	// Sets up select structs
 	for (size_t i = 0; i < impl->pollable_sources.size(); i++)
 	{
 		if (! impl->pollable_sources[i]->loop_data.ready && //might need to remove this "ready" check
@@ -92,6 +95,11 @@ void EventLoop::iteration()
     if (n_ready < 1)
         max_timeout = 0;
 
+	// check if there are any sources. If none are left exit
+	if (impl->sources.size() == 0) {
+		quit();
+		return;
+	}
 	// if (::poll(impl->poll_fds.data(), impl->poll_fds.size(), max_timeout) > 0)
 	// {
 	// 	for (size_t i = 0; i < impl->pollable_sources.size(); i++)
@@ -103,13 +111,26 @@ void EventLoop::iteration()
     tv.tv_sec = 0;
     tv.tv_usec = max_timeout;
 
-    if (::select(impl->pollable_sources.size(), &impl->read_fds, NULL, NULL, &tv) > 0)
+	// printf("Timeout: %d\n", max_timeout);
+
+	// Returns nfds on success, 0 if timeout is reached, -1 on error
+	int err = ::select(impl->pollable_sources.size(), &impl->read_fds, NULL, NULL, &tv);
+    if (err > 0)
 	{
-		for (size_t i = 0; i < impl->pollable_sources.size(); i++)
+		for (size_t i = 0; i < impl->pollable_sources.size(); i++) {
+			printf("Checking....\n");
             if (FD_ISSET(impl->pollable_sources[i]->fd , &impl->read_fds)) {
                 // data recieved
+				printf("Event Occured\n");
 			    impl->pollable_sources[i]->eventOccured = true;
             }
+		}
+	}
+	else if (err == 0) {
+		// printf("Timeout Reached\n");
+	}
+	else {
+		printf("Error %d\n", err);
 	}
 
 	// now check if any more sources are ready after polling
@@ -142,7 +163,7 @@ void EventLoop::iteration()
 			// 		impl->remove_sources.emplace_back(source);
 			// 	source->loop_data.ready = false;
 			// }
-            if (!source->loop_data.ready &&
+            if (source->loop_data.ready &&
 				source->loop_data.handler)
 			{
 				if (! source->dispatch(source->loop_data.handler))

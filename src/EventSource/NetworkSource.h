@@ -18,13 +18,11 @@ public:
 		: fd(fd) {
         eventOccured = false;
         sourceType = EventSourceType::Network;
+        loop_data.ready = false;
     }
 
 	bool prepare(long&) override { return false; }
 
-    /**
-     * Deleted function please use the <#check(fd_set)> method
-     */
     bool check() override {
         return eventOccured;
     };
