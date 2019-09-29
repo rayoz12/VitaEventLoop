@@ -10,6 +10,7 @@
 #define printf psvDebugScreenPrintf
 
 #define NET_INIT_SIZE 1*1024*1024
+#define BUFSIZE 1024
 
 static void* net_memory = NULL;
 static char vita_ip[16];
@@ -81,5 +82,16 @@ int net_CreateUDPServer(int port, Socket** socketPtr) {
 
 	return 0;
 }
+
+// void net_recv(Socket* socket) {
+// 	/*
+// 	* recvfrom: receive a UDP datagram from a client
+// 	*/
+// 	buf = malloc(BUFSIZE);
+// 	n = recvfrom(sockfd, buf, BUFSIZE, 0,
+// 				(struct sockaddr *)&clientaddr, &clientlen);
+// 	if (n < 0)
+// 		error("ERROR in recvfrom");
+// }
 
 #endif

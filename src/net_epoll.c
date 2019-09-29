@@ -1,7 +1,10 @@
-#include "./net_poll.h"
+#include "./net_epoll.h"
 #include <psp2/kernel/threadmgr.h>
 #include <psp2/net/net.h>
 #include <psp2/types.h>
+
+#include "debugScreen.h"
+#define printf psvDebugScreenPrintf
 
 #define MAX_EVENTS 255
 #define MAX_OPEN_FILES 256
@@ -13,7 +16,7 @@
  * timeout is in Milliseconds
  * 
  */
-int net_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
+int net_epoll(struct pollfd *fds, nfds_t nfds, int timeout) {
 
     if (nfds < 0 || nfds >= MAX_OPEN_FILES) {
 		// errno = EINVAL;
@@ -45,21 +48,23 @@ int net_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
 			continue;
 		}
 
-
+		// printf("Creating epoll control for FD: %d, events: %d", fd.fd, ev.events);
 		sceNetEpollControl(eid, SCE_NET_EPOLL_CTL_ADD, ev.data.fd, &ev);
 	}
 
 	SceNetEpollEvent events[MAX_EVENTS] = {0};
-	int nev = sceNetEpollWait(eid, events, MAX_EVENTS, wait); // wait should be in microseconds
+	int nev = sceNetEpollWait(eid, &events[0], MAX_EVENTS, wait); // wait should be in microseconds
 	int res = 0;
 	if (nev < 0) {
 		res = -1;
 		goto exit;
 	}
 
+	// printf("nev %d\n", nev);
 	for (i = 0; i < nev; i++) {
 		if (events[i].events) {
 			fds[i].revents = events[i].events;
+			printf("FD: %d, Event: %d\n", fds[i].fd, events[i].events);
 			res++;
 		}
 	}

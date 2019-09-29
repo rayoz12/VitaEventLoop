@@ -3,6 +3,7 @@
 #define NETWORKSOURCE_H
 
 #include "./EventSource.h"
+#include "./NetworkEvents.h"
 
 
 namespace VitaEventLoop
@@ -10,21 +11,27 @@ namespace VitaEventLoop
 class NetworkSource : public EventSource
 {
 public:
-	int fd;
-	
-    bool eventOccured;
+	int fd, revents;
+	NetworkEvents events;
 
-	NetworkSource(int fd)
-		: fd(fd) {
-        eventOccured = false;
+	NetworkSource(int fd, NetworkEvents events)
+		: fd(fd), revents(0), events(events) {
         sourceType = EventSourceType::Network;
-        loop_data.ready = false;
     }
 
 	bool prepare(long&) override { return false; }
 
     bool check() override {
-        return eventOccured;
+        if (events == NetworkEvents::NONE || revents == 0)
+			return false;
+		if (((revents & NetworkEvents::INPUT) && (events & NetworkEvents::INPUT)) ||
+			((revents & NetworkEvents::OUTPUT) && (events & NetworkEvents::OUTPUT)) ||
+			((revents & NetworkEvents::ERROR) && (events & NetworkEvents::ERROR)) ||
+			((revents & NetworkEvents::HANGUP) && (events &  NetworkEvents::HANGUP)))
+		{
+			return true;
+		}
+		return false;
     };
 
 	bool dispatch(EventHandler &func) { return func(*this); }

@@ -39,6 +39,7 @@ set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -d PARENTAL_LEVEL=1")
 # Add any additional include paths here
 include_directories(
   ../common
+  src
 )
 
 # Add any additional library paths here
@@ -51,6 +52,7 @@ link_directories(
 # Add all the files needed to compile here
 add_executable(${PROJECT_NAME}
   src/main.cpp
+  src/net_epoll.c
   ../common/debugScreen.c
   src/EventLoop/EventLoop.cpp
   src/EventSource/TimeoutSource.cpp

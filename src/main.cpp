@@ -9,7 +9,8 @@
 #include "./EventLoop/EventLoop.h"
 #include "./EventSource/TimeoutSource.h"
 #include "./EventSource/NetworkSource.h"
-#include "./net.h"
+#include "./c_net.h"
+#include "./platform/net/udp.h"
 
 #include "debugScreen.h"
 #define printf psvDebugScreenPrintf
@@ -20,7 +21,7 @@ void graceful_exit() {
 	sceKernelDelayThread(30*1000000); // Wait for 30 seconds
 	sceKernelExitProcess(0);
 }
-
+static int counter = 0;
 int main(int argc, char *argv[]) {
 	sceSysmoduleLoadModule(SCE_SYSMODULE_NET);
 	
@@ -62,10 +63,12 @@ int main(int argc, char *argv[]) {
 		graceful_exit();
 	}
 
-	auto networkSource = new NetworkSource(serverSocket->sock);
+	Platform::UDPSocket udpSocket;
+	
+	auto networkSource = new NetworkSource(serverSocket->sock, NetworkEvents::INPUT);
 	loop.add_event_source(networkSource, [&](EventSource&) {
-		printf("activity on network\n");
-		return false;
+		printf("activity on network %d\n", ++counter);
+		return true;
 	});
 	printf("Server Started\n");
 	loop.run();

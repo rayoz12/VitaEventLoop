@@ -17,6 +17,7 @@
 #include "./../EventSource/EventSource.h"
 #include "./../EventSource/NetworkSource.h"
 #include "./../EventSource/TimeoutSource.h"
+#include "./../net_epoll.h"
 
 using namespace std;
 
@@ -31,7 +32,7 @@ struct EventLoop::Private
 	vector<EventSource*> sources;
 	vector<EventSource*> remove_sources;
 	vector<NetworkSource*> pollable_sources;
-	fd_set read_fds;
+	vector<struct pollfd> poll_fds;
 	unordered_set<EventSource*> source_set;
 	// vector<IdleSource*> idle_sources;
 	vector<TimeoutSource*> timeout_sources;
@@ -54,7 +55,6 @@ void EventLoop::iteration()
 {
 	long max_timeout = -1;
 	int n_ready = 0;
-    FD_ZERO(&impl->read_fds);
 
 	// prepare and check for already ready event sources
 	for (auto source : impl->sources)
@@ -77,14 +77,15 @@ void EventLoop::iteration()
 	}
 	
 	// poll all of the pollable event sources
-	// Sets up select structs
+	impl->poll_fds.resize(impl->pollable_sources.size());
 	for (size_t i = 0; i < impl->pollable_sources.size(); i++)
 	{
-		if (! impl->pollable_sources[i]->loop_data.ready && //might need to remove this "ready" check
+		if (! impl->pollable_sources[i]->loop_data.ready &&
 				impl->pollable_sources[i]->fd >= 0)
 		{
-            
-            FD_SET(impl->pollable_sources[i]->fd, &impl->read_fds);
+			impl->poll_fds[i].fd = impl->pollable_sources[i]->fd;
+			impl->poll_fds[i].events = static_cast<int>(impl->pollable_sources[i]->events);
+			impl->poll_fds[i].revents = impl->pollable_sources[i]->revents = 0;
 		}
 	}
 
@@ -92,8 +93,10 @@ void EventLoop::iteration()
 	// poll() return immediately.
 	// if (n_ready < 1 && impl->idle_sources.size() > 0)
 	// 	max_timeout = 0;
-    if (n_ready < 1)
-        max_timeout = 0;
+    if (n_ready < 1) {
+        // max_timeout = 0;
+		max_timeout = 1000;
+	}
 
 	// check if there are any sources. If none are left exit
 	if (impl->sources.size() == 0) {
@@ -105,32 +108,19 @@ void EventLoop::iteration()
 	// 	for (size_t i = 0; i < impl->pollable_sources.size(); i++)
 	// 		impl->pollable_sources[i]->revents = impl->poll_fds[i].revents;
 	// }
-    
-    // Set select() timeout
-    struct timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = max_timeout;
 
 	// printf("Timeout: %d\n", max_timeout);
-
-	// Returns nfds on success, 0 if timeout is reached, -1 on error
-	int err = ::select(impl->pollable_sources.size(), &impl->read_fds, NULL, NULL, &tv);
-    if (err > 0)
+	int err = ::net_epoll(impl->poll_fds.data(), (nfds_t) impl->poll_fds.size(), max_timeout);
+	if (err > 0)
 	{
-		for (size_t i = 0; i < impl->pollable_sources.size(); i++) {
-			printf("Checking....\n");
-            if (FD_ISSET(impl->pollable_sources[i]->fd , &impl->read_fds)) {
-                // data recieved
-				printf("Event Occured\n");
-			    impl->pollable_sources[i]->eventOccured = true;
-            }
-		}
+		for (size_t i = 0; i < impl->pollable_sources.size(); i++)
+			impl->pollable_sources[i]->revents = impl->poll_fds[i].revents;
 	}
 	else if (err == 0) {
-		// printf("Timeout Reached\n");
+		// printf("Poll Timeout Reached\n");
 	}
 	else {
-		printf("Error %d\n", err);
+		printf("Error, %d\n", err);
 	}
 
 	// now check if any more sources are ready after polling
@@ -143,6 +133,7 @@ void EventLoop::iteration()
 		{
 			if (source->check())
 			{
+				// printf("Event Occured\n");
 				source->loop_data.ready = true;
 				n_ready++;
 			}
