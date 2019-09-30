@@ -1,6 +1,13 @@
 
 #include "./udp.h"
 
-Platform::UDPSocket::UDPSocket() {
+using namespace Platform;
+using namespace std;
+
+UDPSocket::UDPSocket() {
+    isServerSocket = true;
+}
+
+int UDPSocket::bind(int port, const struct sockaddr* addr) {
     isServerSocket = true;
 }

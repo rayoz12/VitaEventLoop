@@ -50,6 +50,12 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "bit": "cpp",
-        "debugscreen.h": "c"
+        "debugscreen.h": "c",
+        "condition_variable": "cpp",
+        "map": "cpp",
+        "mutex": "cpp",
+        "thread": "cpp",
+        "typeindex": "cpp",
+        "netfwd": "cpp"
     }
 }
