@@ -56,6 +56,7 @@ add_executable(${PROJECT_NAME}
   ../common/debugScreen.c
   src/EventLoop/EventLoop.cpp
   src/EventSource/TimeoutSource.cpp
+  src/platform/net/udp.cpp
 )
 
 # Library to link to (drop the -l prefix). This will mostly be stubs.

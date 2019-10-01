@@ -4,18 +4,19 @@
 
 #include "./EventSource.h"
 #include "./NetworkEvents.h"
-
+#include "./INetworkInterface.h"
 
 namespace VitaEventLoop
 {
 class NetworkSource : public EventSource
 {
 public:
-	int fd, revents;
+	int revents;
+	NetworkInterface& socket;
 	NetworkEvents events;
 
-	NetworkSource(int fd, NetworkEvents events)
-		: fd(fd), revents(0), events(events) {
+	NetworkSource(NetworkInterface& in_socket, NetworkEvents events)
+		: socket(in_socket), revents(0), events(events) {
         sourceType = EventSourceType::Network;
     }
 

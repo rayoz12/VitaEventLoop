@@ -1,15 +1,14 @@
 #include <psp2/kernel/processmgr.h>
-#include <psp2/sysmodule.h>
+
 #include <sstream>
 #include <vector>
 
 #include <cstdio>
 
-
 #include "./EventLoop/EventLoop.h"
 #include "./EventSource/TimeoutSource.h"
 #include "./EventSource/NetworkSource.h"
-#include "./c_net.h"
+#include "./platform/platform.h"
 #include "./platform/net/udp.h"
 
 #include "debugScreen.h"
@@ -17,13 +16,16 @@
 
 void graceful_exit() {
 	printf("Exiting");
-	net_term();
+	platform_term();
 	sceKernelDelayThread(30*1000000); // Wait for 30 seconds
 	sceKernelExitProcess(0);
 }
 static int counter = 0;
 int main(int argc, char *argv[]) {
-	sceSysmoduleLoadModule(SCE_SYSMODULE_NET);
+	if (platform_init() < 0) {
+		printf("Failed to init\n");
+		graceful_exit();
+	};
 	
 	psvDebugScreenInit();
 
@@ -51,21 +53,14 @@ int main(int argc, char *argv[]) {
 		return false;
 	});
 
-	if (net_init() < 0) {
-		printf("Failed to init Net\n");
-		graceful_exit();
-	};
-
-	Socket* serverSocket;
-
-	if (net_CreateUDPServer(4200, &serverSocket) < 0) {
-		printf("Failed to create server\n");
-		graceful_exit();
-	}
+	// if (net_CreateUDPServer(4200, &serverSocket) < 0) {
+	// 	printf("Failed to create server\n");
+	// 	graceful_exit();
+	// }
 
 	Platform::UDPSocket udpSocket;
 	
-	auto networkSource = new NetworkSource(serverSocket->sock, NetworkEvents::INPUT);
+	auto networkSource = new NetworkSource(udpSocket, NetworkEvents::INPUT);
 	loop.add_event_source(networkSource, [&](EventSource&) {
 		printf("activity on network %d\n", ++counter);
 		return true;

@@ -6,7 +6,11 @@
 #include <vector>
 #include <sys/socket.h>
 
-#include "./../common/common.h";
+#include "./../common/common.h"
+#include "./../../EventSource/INetworkInterface.h"
+
+// The Size of the buffer used when sending and receiving data.
+#define IO_BUFFER_SIZE 4096
 
 //Design
 /**
@@ -38,13 +42,17 @@ typedef enum uv_membership {
     UV_JOIN_GROUP
 } uv_membership;
 
+/**
+ * This handler MUST copy and data it needs as the buffer is deleted after the call
+ */
+using ReceiveHandler = std::function<void(int bytesRead, vita_uv_buf& buf, struct sockaddr_in remoteAddr)>;
 
-class UDPSocket
+class UDPSocket : public VitaEventLoop::NetworkInterface
 {
 public:
 	UDPSocket();
 
-    int open(int socket);
+    // int open(int socket);
 
     int setSockOpt();
     
@@ -66,15 +74,35 @@ public:
     int setTTL(int ttl);
 
     // For connected sockets sockaddr must be nullptr, for unconnected sockets it must be defined
-    int send(std::vector<buf>, const struct sockaddr& addr);
+    int sendMessage(std::vector<vita_uv_buf>, const struct sockaddr& addr);
 
-    int rec
+    void recvStart(ReceiveHandler handler);
+
+    virtual int StartSocket() override;
+
+    virtual int StopSocket() override;
+
+    virtual int InputEvent() override;
+
+    virtual int OutpuEvent() override;
+
+    virtual int GetFD() override;
+
 
 
 private:
-    int socket;
-	bool isServerSocket = false;
-    bool isOpen = false;
+    int sockfd;
+
+    // Flags describing the currect connection. 
+    bool isBound = false;
+    bool isConnected = false;
+    bool isInit = false;
+    bool isListening = false;
+
+    ReceiveHandler messageHandler;
+    
+    int recvMessage();
+
 };
 
 } // namespace Platform

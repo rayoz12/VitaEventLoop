@@ -81,9 +81,9 @@ void EventLoop::iteration()
 	for (size_t i = 0; i < impl->pollable_sources.size(); i++)
 	{
 		if (! impl->pollable_sources[i]->loop_data.ready &&
-				impl->pollable_sources[i]->fd >= 0)
+				impl->pollable_sources[i]->socket.GetFD() >= 0)
 		{
-			impl->poll_fds[i].fd = impl->pollable_sources[i]->fd;
+			impl->poll_fds[i].fd = impl->pollable_sources[i]->socket.GetFD();
 			impl->poll_fds[i].events = static_cast<int>(impl->pollable_sources[i]->events);
 			impl->poll_fds[i].revents = impl->pollable_sources[i]->revents = 0;
 		}
