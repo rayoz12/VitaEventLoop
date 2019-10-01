@@ -43,10 +43,17 @@ typedef enum uv_membership {
     UV_JOIN_GROUP
 } uv_membership;
 
+typedef struct Remote_Info {
+    std::string address;
+    std::string family;
+    int port;
+    int size;
+} Remote_Info;
+
 /**
  * This handler MUST copy and data it needs as the buffer is deleted after the call
  */
-using ReceiveHandler = std::function<void(int bytesRead, VitaEventLoop::vita_uv_buf& buf, struct sockaddr_in remoteAddr)>;
+using ReceiveHandler = std::function<void(int bytesRead, VitaEventLoop::vita_uv_buf& buf, Remote_Info info)>;
 
 class UDPSocket : public VitaEventLoop::NetworkInterface
 {
@@ -57,7 +64,7 @@ public:
 
     int setSockOpt();
     
-    int bind(int port, const struct sockaddr_in& addr);
+    int bind(int port);
 
     int connect(const struct sockaddr& addr);
 

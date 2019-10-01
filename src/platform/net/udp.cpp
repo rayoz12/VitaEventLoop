@@ -1,19 +1,29 @@
 
 #include "./udp.h"
 
-#include <sys/fcntl.h>
+#include <psp2/net/net.h>
+#include <psp2/net/netctl.h>
 
 using namespace Platform;
 using namespace std;
 using namespace VitaEventLoop;
 
 UDPSocket::UDPSocket() {
-    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sockfd < 0) {
+    // sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    // if (sockfd < 0) {
+    //     return;
+    // }
+    // isInit = true;
+    // fcntl(sockfd, F_SETFL, O_NONBLOCK);
+
+    int type = SCE_NET_IPPROTO_UDP;
+
+	sockfd = sceNetSocket("Server Socket", SCE_NET_AF_INET, SCE_NET_SOCK_DGRAM, SCE_NET_IPPROTO_UDP);
+	if (sockfd <= 0) {
+        //printf("Failed to create socket\n");
         return;
     }
     isInit = true;
-    fcntl(sockfd, F_SETFL, O_NONBLOCK);
 }
 
 // int open(int socket) {
@@ -24,8 +34,18 @@ int UDPSocket::setSockOpt() {
     return 0;
 }
 
-int UDPSocket::bind(int port, const struct sockaddr_in& addr) {
-    int err = ::bind(sockfd, (sockaddr*) &addr, sizeof(addr));
+int UDPSocket::bind(int port) {
+    int _true = 1;
+	SceNetSockaddrIn addrTo;
+	addrTo.sin_family = SCE_NET_AF_INET;
+	addrTo.sin_port = sceNetHtons(port);
+    SceNetCtlInfo info;
+    sceNetCtlInetGetInfo(SCE_NETCTL_INFO_GET_IP_ADDRESS, &info);
+    sceNetInetPton(SCE_NET_AF_INET, info.ip_address, &addrTo.sin_addr);
+    // sceNetInetPton(SCE_NET_AF_INET, "192.168.1.37", &addrTo.sin_port);
+
+
+    int err = ::sceNetBind(sockfd, (SceNetSockaddr*)&addrTo, sizeof(addrTo));
     return err;
 }
 
@@ -78,15 +98,31 @@ int UDPSocket::recvMessage() {
     uv_buf->base = (char*) buf;
 
     //allocate the remote address
-    struct sockaddr_in remote;
-    socklen_t addrLen;
+    struct SceNetSockaddrIn remote;
+    unsigned int addrLen;
 
-    int nbytes = ::recvfrom(sockfd, buf, IO_BUFFER_SIZE, 0, (sockaddr*) &remote, &addrLen);
+    int nbytes = ::sceNetRecvfrom(sockfd, buf, IO_BUFFER_SIZE, 0, (SceNetSockaddr*) &remote, &addrLen);
     if (nbytes < 0) {
         return nbytes;
     }
     uv_buf->len = nbytes;
-    messageHandler(nbytes, *uv_buf, remote);
+
+    // populate remote info
+    Remote_Info info;
+    char s[256];
+    const char* err = sceNetInetNtop(SCE_NET_AF_INET, (void *) &remote.sin_addr.s_addr, &s[0], 256);
+    if (err != NULL) {
+        info.address = std::string(err);
+    }
+    else {
+        info.address = "unknown";
+    }
+    info.family = "IPv4";
+    info.port = remote.sin_port;
+    info.size = nbytes;
+
+
+    messageHandler(nbytes, *uv_buf, info);
     free(buf);
     delete uv_buf;
     return 0;
