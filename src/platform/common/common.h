@@ -7,10 +7,7 @@
 
 namespace Platform
 {
-    typedef struct vita_uv_buf {
-        char* base;
-        int len;
-    } vita_uv_buf;
+    
 
 } // namespace Platform
 

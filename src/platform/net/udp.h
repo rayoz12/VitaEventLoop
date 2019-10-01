@@ -8,6 +8,7 @@
 
 #include "./../common/common.h"
 #include "./../../EventSource/INetworkInterface.h"
+#include "./../../EventLoop/EventLoopMisc.h"
 
 // The Size of the buffer used when sending and receiving data.
 #define IO_BUFFER_SIZE 4096
@@ -45,7 +46,7 @@ typedef enum uv_membership {
 /**
  * This handler MUST copy and data it needs as the buffer is deleted after the call
  */
-using ReceiveHandler = std::function<void(int bytesRead, vita_uv_buf& buf, struct sockaddr_in remoteAddr)>;
+using ReceiveHandler = std::function<void(int bytesRead, VitaEventLoop::vita_uv_buf& buf, struct sockaddr_in remoteAddr)>;
 
 class UDPSocket : public VitaEventLoop::NetworkInterface
 {
@@ -56,7 +57,7 @@ public:
 
     int setSockOpt();
     
-    int bind(int port, const struct sockaddr& addr);
+    int bind(int port, const struct sockaddr_in& addr);
 
     int connect(const struct sockaddr& addr);
 
@@ -74,7 +75,7 @@ public:
     int setTTL(int ttl);
 
     // For connected sockets sockaddr must be nullptr, for unconnected sockets it must be defined
-    int sendMessage(std::vector<vita_uv_buf>, const struct sockaddr& addr);
+    int sendMessage(std::vector<VitaEventLoop::vita_uv_buf>, const struct sockaddr& addr);
 
     void recvStart(ReceiveHandler handler);
 

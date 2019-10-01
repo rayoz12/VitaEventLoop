@@ -8,7 +8,7 @@
                 "./../common/**"
             ],
             "defines": [],
-            "compilerPath": "//usr/local/vitasdk/bin/arm-vita-eabi-gcc",
+            "compilerPath": "/usr/local/vitasdk/bin/arm-vita-eabi-gcc",
             "cStandard": "c11",
             "cppStandard": "c++11",
             "intelliSenseMode": "gcc-x86"

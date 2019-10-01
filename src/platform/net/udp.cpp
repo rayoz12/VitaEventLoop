@@ -5,6 +5,7 @@
 
 using namespace Platform;
 using namespace std;
+using namespace VitaEventLoop;
 
 UDPSocket::UDPSocket() {
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -23,8 +24,8 @@ int UDPSocket::setSockOpt() {
     return 0;
 }
 
-int UDPSocket::bind(int port, const struct sockaddr& addr) {
-    int err = ::bind(sockfd, &addr, sizeof(addr));
+int UDPSocket::bind(int port, const struct sockaddr_in& addr) {
+    int err = ::bind(sockfd, (sockaddr*) &addr, sizeof(addr));
     return err;
 }
 
@@ -66,7 +67,7 @@ void UDPSocket::recvStart(ReceiveHandler handler) {
 }
 
 // For connected sockets sockaddr must be nullptr, for unconnected sockets it must be defined
-int UDPSocket::sendMessage(std::vector<vita_uv_buf>, const struct sockaddr& addr) {
+int UDPSocket::sendMessage(std::vector<VitaEventLoop::vita_uv_buf>, const struct sockaddr& addr) {
     return 0;
 }
 
