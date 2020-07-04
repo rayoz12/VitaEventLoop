@@ -20,6 +20,8 @@ project(event_loop)
 # to build Vita specific artifacts (self/vpk).
 include("${VITASDK}/share/vita.cmake" REQUIRED)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 ## Configuration options for this app
 # Display name (under bubble in LiveArea)
 set(VITA_APP_NAME "Event Loop")
@@ -31,8 +33,8 @@ set(VITA_VERSION  "01.00")
 
 ## Flags and includes for building
 # Note that we make sure not to overwrite previous flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -g")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 # Optional. You can specify more param.sfo flags this way.
 set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -d PARENTAL_LEVEL=1")
 
@@ -56,7 +58,9 @@ add_executable(${PROJECT_NAME}
   ../common/debugScreen.c
   src/EventLoop/EventLoop.cpp
   src/EventSource/TimeoutSource.cpp
+  src/EventSource/NetworkSource.cpp
   src/platform/net/udp.cpp
+  src/platform/NetLog/NetLog.c
 )
 
 # Library to link to (drop the -l prefix). This will mostly be stubs.
@@ -67,6 +71,7 @@ target_link_libraries(${PROJECT_NAME}
   SceDisplay_stub
   SceNet_stub
   SceNetCtl_stub
+  debugnet
   SceSysmodule_stub
   m
 )

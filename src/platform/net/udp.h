@@ -4,6 +4,7 @@
 #include <string>
 #include <functional>
 #include <vector>
+#include <queue>
 #include <sys/socket.h>
 
 #include "./../common/common.h"
@@ -54,6 +55,7 @@ typedef struct Remote_Info {
  * This handler MUST copy and data it needs as the buffer is deleted after the call
  */
 using ReceiveHandler = std::function<void(int bytesRead, VitaEventLoop::vita_uv_buf& buf, Remote_Info info)>;
+using MessageSentHandler = std::function<void(int status)>;
 
 class UDPSocket : public VitaEventLoop::NetworkInterface
 {
@@ -66,11 +68,11 @@ public:
     
     int bind(int port);
 
-    int connect(const struct sockaddr& addr);
+    int connect(int port, std::string ip);
 
-    int getPeerName(struct sockaddr& addr);
+    int getPeerName(struct SceNetSockaddr* addr, unsigned int* addrLen);
 
-    int getSockName(struct sockaddr& addr);
+    int getSockName(struct SceNetSockaddr& addr);
 
     int setMembership(const std::string& multicast_addr, const std::string& interface_addr, uv_membership membership);
 
@@ -81,8 +83,9 @@ public:
     int setBroadcast(bool on);
     int setTTL(int ttl);
 
-    // For connected sockets sockaddr must be nullptr, for unconnected sockets it must be defined
-    int sendMessage(std::vector<VitaEventLoop::vita_uv_buf>, const struct sockaddr& addr);
+    // For connected sockets port and ip and 0 and "" respectively
+    // Memory allocated in bufs must always be allocated with malloc
+    int sendMessage(std::vector<VitaEventLoop::vita_uv_buf *>& bufs, const int port, const std::string ip, MessageSentHandler func);
 
     void recvStart(ReceiveHandler handler);
 
@@ -92,9 +95,11 @@ public:
 
     virtual int InputEvent() override;
 
-    virtual int OutpuEvent() override;
+    virtual int OutputEvent() override;
 
     virtual int GetFD() override;
+
+    virtual bool CanOutput() override;
 
 
 
@@ -106,10 +111,27 @@ private:
     bool isConnected = false;
     bool isInit = false;
     bool isListening = false;
+    bool isServerSocket = false;
+    bool isClientSocket = false;
+
 
     ReceiveHandler messageHandler;
+
+    SceNetSockaddrIn connectedPeer; //not really because UDP is connectionless
     
-    int recvMessage();
+    int recvMessageEvent();
+    int sendMessageEvent();
+
+
+    struct SendMsgStruct {
+        SendMsgStruct(std::vector<VitaEventLoop::vita_uv_buf *>& bufs_in): bufs(bufs_in) {};
+        std::vector<VitaEventLoop::vita_uv_buf *>& bufs;
+        std::string ip;
+        int port;
+        MessageSentHandler cb;
+    };
+
+    std::queue<struct SendMsgStruct> sendQueue;
 
 };
 

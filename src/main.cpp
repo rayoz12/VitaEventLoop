@@ -25,7 +25,9 @@ void graceful_exit() {
 	sceKernelDelayThread(30*1000000); // Wait for 30 seconds
 	sceKernelExitProcess(0);
 }
+
 static int counter = 0;
+
 int main(int argc, char *argv[]) {
 	if (platform_init() < 0) {
 		printf("Failed to init\n");
@@ -33,7 +35,6 @@ int main(int argc, char *argv[]) {
 	};
 	
 	psvDebugScreenInit();
-
 
 	auto buf = psvDebugScreenPrintf("Hello, world!\n");
 
@@ -65,8 +66,33 @@ int main(int argc, char *argv[]) {
 
 	Platform::UDPSocket udpSocket;
 	udpSocket.recvStart([&](int bytes, vita_uv_buf& buf, Platform::Remote_Info info) {
-		printf("IP address: %s\n", info.address.c_str());
-		printf("Received %s from: %s\n", buf.base, info.address.c_str());
+		printf("\nReceived %s\n", buf.base);
+		printf("Remote: %s:%d\n", info.address.c_str(), info.port);
+		NetLog_Log(INFO, "Received %s\n", buf.base);
+		NetLog_Log(INFO, "Remote: %s:%d\n", info.address.c_str(), info.port);
+
+		vita_uv_buf* copy = new vita_uv_buf;
+		copy->base = malloc(buf.len);
+		memcpy(copy->base, buf.base, buf.len);
+		copy->len = buf.len;
+		std::vector<vita_uv_buf *> bufVect;
+		bufVect.push_back(copy);
+		NetLog_Log(INFO, "Copy: %p\n", &copy->base);
+		int err = udpSocket.sendMessage(bufVect, info.port, info.address, [&](int status){
+			if (status < 0) {
+				NetLog_Log(ERROR, "Error %d\n", status);
+				// printf("Error");
+			}
+			else {
+				NetLog_Log(INFO, "Sent %d\n", status);
+				// printf("Sent");
+			}
+			free(copy->base);
+			delete copy;
+		});
+		if (err < 0) {
+			NetLog_Log(ERROR, "Failed to Send Message %d\n", err);
+		}
 	});
 
 	sockaddr_in addr;
@@ -78,18 +104,19 @@ int main(int argc, char *argv[]) {
 		graceful_exit();
 	}
 	
-	auto networkSource = new NetworkSource(udpSocket, NetworkEvents::INPUT);
+	auto networkSource = new NetworkSource(udpSocket, static_cast<int>(NetworkEvents::UV_INPUT | NetworkEvents::UV_OUTPUT));
 	loop.add_event_source(networkSource, [&](EventSource& source) {
-		printf("activity on network %d\n", ++counter);
+		// printf("activity on network %d\n", ++counter);
 
-		auto netSource = dynamic_cast<NetworkSource&>(source);
-		netSource.socket.InputEvent();
+		// auto netSource = dynamic_cast<NetworkSource&>(source);
+		// netSource.socket.InputEvent();
 
 		return true;
 	});
 	printf("Server Started\n");
+	NetLog_Log(INFO, "Server Started\n");
 	loop.run();
-
+	NetLog_Log(INFO, "Event Loop Finished\n");
 	printf("Event Loop Finished\n");
 
 	sceKernelDelayThread(30*1000000); // Wait for 30 seconds

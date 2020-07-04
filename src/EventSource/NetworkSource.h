@@ -8,34 +8,21 @@
 
 namespace VitaEventLoop
 {
+
 class NetworkSource : public EventSource
 {
 public:
-	int revents;
+	int revents, events;
 	NetworkInterface& socket;
-	NetworkEvents events;
+	// NetworkEvents events;
 
-	NetworkSource(NetworkInterface& in_socket, NetworkEvents events)
-		: socket(in_socket), revents(0), events(events) {
-        sourceType = EventSourceType::Network;
-    }
+	NetworkSource(NetworkInterface& in_socket, int events);
 
-	bool prepare(long&) override { return false; }
+	bool prepare(long&) override;
 
-    bool check() override {
-        if (events == NetworkEvents::NONE || revents == 0)
-			return false;
-		if (((revents & NetworkEvents::INPUT) && (events & NetworkEvents::INPUT)) ||
-			((revents & NetworkEvents::OUTPUT) && (events & NetworkEvents::OUTPUT)) ||
-			((revents & NetworkEvents::ERROR) && (events & NetworkEvents::ERROR)) ||
-			((revents & NetworkEvents::HANGUP) && (events &  NetworkEvents::HANGUP)))
-		{
-			return true;
-		}
-		return false;
-    };
+    bool check() override;
 
-	bool dispatch(EventHandler &func) { return func(*this); }
+	bool dispatch(EventHandler &func);
 
 };
 

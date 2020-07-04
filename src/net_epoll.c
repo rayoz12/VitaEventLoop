@@ -64,7 +64,7 @@ int net_epoll(struct pollfd *fds, nfds_t nfds, int timeout) {
 	for (i = 0; i < nev; i++) {
 		if (events[i].events) {
 			fds[i].revents = events[i].events;
-			printf("FD: %d, Event: %d\n", fds[i].fd, events[i].events);
+			//printf("FD: %d, Event: %d\n", fds[i].fd, events[i].events);
 			res++;
 		}
 	}

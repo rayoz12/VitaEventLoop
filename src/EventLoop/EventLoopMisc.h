@@ -4,7 +4,7 @@
 namespace VitaEventLoop
 {
     typedef struct vita_uv_buf {
-        char* base;
+        void* base;
         int len;
     } vita_uv_buf;
 } // namespace VitaEventLoop

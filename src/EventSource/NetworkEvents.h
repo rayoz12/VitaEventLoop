@@ -16,11 +16,11 @@ namespace VitaEventLoop
 
 enum class NetworkEvents
 {
-	NONE     = 0,
-	INPUT    = POLLIN,
-	OUTPUT   = POLLOUT,
-	ERROR    = POLLERR,
-	HANGUP   = POLLHUP,
+	UV_NONE     = 0,
+	UV_INPUT    = POLLIN,
+	UV_OUTPUT   = POLLOUT,
+	UV_ERROR    = POLLERR,
+	UV_HANGUP   = POLLHUP,
 };
 
 } // namespace VitaEventLoop

@@ -14,7 +14,6 @@
 
 namespace VitaEventLoop
 {
-    
 
 class NetworkInterface
 {
@@ -26,12 +25,14 @@ public:
 
     virtual int InputEvent() = 0;
 
-    virtual int OutpuEvent() = 0;
+    virtual int OutputEvent() = 0;
 
     virtual int GetFD() = 0;
 
+    virtual bool CanOutput() = 0;
+
 private:
-    
+
 };
 
 

@@ -6,6 +6,8 @@
 #include "malloc.h"
 #include <psp2/sysmodule.h>
 
+#include "./NetLog/NetLog.h"
+
 int err;
 
 //--------------Net Defines-----------------
@@ -16,6 +18,11 @@ static void* net_memory = NULL;
 static char vita_ip[16];
 static bool isNet = false;
 //--------------Net Defines-----------------
+
+//--------------Debug Log----------------
+#define ip_server "192.168.1.100"
+#define port_server 18194
+//-----------End Debug Log----------------
 
 
 int net_init() {
@@ -38,7 +45,13 @@ int platform_init() {
 	if (err = sceSysmoduleLoadModule(SCE_SYSMODULE_NET) < 0) {
 		return err;
 	};
-	return net_init();
+	err = net_init();
+	if (err < 0) {
+		return err;
+	}
+	err = NetLog_init(ip_server, port_server);
+	
+	return err;
 }
 
 int net_term() {
@@ -52,10 +65,17 @@ int net_term() {
 }
 
 int platform_term() {
+	err = net_term();
+	if (err < 0)
+		return err;
+
+	err = NetLog_term();
+	
 	if (err = sceSysmoduleUnloadModule(SCE_SYSMODULE_NET) < 0) {
 		return err;
 	};
-	return net_term();
+
+	return err;
 }
 
 #endif

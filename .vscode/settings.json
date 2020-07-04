@@ -56,6 +56,15 @@
         "mutex": "cpp",
         "thread": "cpp",
         "typeindex": "cpp",
-        "netfwd": "cpp"
+        "netfwd": "cpp",
+        "forward_list": "cpp",
+        "list": "cpp",
+        "future": "cpp",
+        "buffer": "cpp",
+        "executor": "cpp",
+        "internet": "cpp",
+        "io_context": "cpp",
+        "socket": "cpp",
+        "timer": "cpp"
     }
 }

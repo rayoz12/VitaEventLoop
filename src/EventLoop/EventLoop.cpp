@@ -157,7 +157,7 @@ void EventLoop::iteration()
             if (source->loop_data.ready &&
 				source->loop_data.handler)
 			{
-				if (! source->dispatch(source->loop_data.handler))
+				if (!source->dispatch(source->loop_data.handler))
 					impl->remove_sources.emplace_back(source);
 				source->loop_data.ready = false;
 			}
@@ -236,7 +236,7 @@ bool EventLoop::set_source_handler(EventSource *source, EventHandler handler)
 
 bool EventLoop::remove_event_source(EventSource *source)
 {
-	if (! contains_source(source))
+	if (!contains_source(source))
 		return false;
 
 	// if (source->is_idle_source())
@@ -247,20 +247,14 @@ bool EventLoop::remove_event_source(EventSource *source)
 	// }
 	if (source->sourceType == EventSourceType::Timeout)
 	{
-		impl->timeout_sources.erase(remove(begin(impl->timeout_sources),
-										   end(impl->timeout_sources), source),
-									end(impl->timeout_sources));
+		impl->timeout_sources.erase(remove(begin(impl->timeout_sources),end(impl->timeout_sources), source),end(impl->timeout_sources));
 	}
 	else if (source->sourceType == EventSourceType::Network)
 	{
-		impl->pollable_sources.erase(remove(begin(impl->pollable_sources),
-											end(impl->pollable_sources), source),
-									 end(impl->pollable_sources));
+		impl->pollable_sources.erase(remove(begin(impl->pollable_sources),end(impl->pollable_sources), source),end(impl->pollable_sources));
 	}
 
-	impl->sources.erase(remove(begin(impl->sources),
-							   end(impl->sources), source),
-						end(impl->sources));
+	impl->sources.erase(remove(begin(impl->sources),end(impl->sources), source),end(impl->sources));
 
 	impl->source_set.erase(source);
 
